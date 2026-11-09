@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEXORA</title>
+<style>
+:root{--bg:#050b1f;--card:#0d1735;--bd:#1d2c5c;--tx:#e8eeff;--mu:#8fa3d6;--ac:#2f6bff;--ac2:#5ec8ff;--ok:#3ddc97;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eef3ff;--card:#fff;--bd:#c9d6f5;--tx:#0a1330;--mu:#51618f}}
+:root[data-theme="light"]{--bg:#eef3ff;--card:#fff;--bd:#c9d6f5;--tx:#0a1330;--mu:#51618f}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh;background-image:radial-gradient(600px 300px at 80% -10%,#2f6bff33,transparent)}
+main{max-width:640px;margin:0 auto;padding:16px 16px 96px}
+h1,h2,h3{margin:.2em 0}.mu{color:var(--mu);font-size:.9rem}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.12em;font-size:1.3rem}
+.logo svg{width:34px;height:34px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 0 24px #2f6bff14}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tool{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;min-height:104px;transition:.2s}
+.tool:active,.tool:hover{border-color:var(--ac2);transform:translateY(-2px)}.tool b{display:block;font-size:1.05rem}.ic{font-size:1.6rem}
+input,select,textarea,button{font:inherit;color:var(--tx)}
+input,select,textarea{width:100%;background:#0000002a;border:1px solid var(--bd);border-radius:12px;padding:12px;margin:6px 0;min-height:46px}
+button,.btn{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;border:0;border-radius:12px;padding:12px 16px;min-height:46px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;text-align:center}
+button.sec{background:transparent;border:1px solid var(--bd);color:var(--tx)}button:disabled{opacity:.5;cursor:not-allowed}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);display:flex;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+nav a{flex:1;text-align:center;text-decoration:none;color:var(--mu);font-size:.72rem;padding:6px 0;min-height:48px}nav a.on{color:var(--ac2)}nav a span{display:block;font-size:1.3rem}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}.tabs button{white-space:nowrap;flex:none;padding:8px 14px;min-height:40px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.keys button{background:var(--bd);min-height:54px;font-size:1.2rem}
+.disp{background:#0000003a;border-radius:12px;padding:14px;text-align:right;font-size:1.6rem;min-height:60px;overflow-x:auto}
+.row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}.row span{flex:1}.done span{text-decoration:line-through;color:var(--mu)}
+.row input[type=checkbox]{width:24px;min-height:24px;margin:0}.sm{padding:6px 10px;min-height:36px}
+.res{color:var(--ac2);font-weight:700;font-size:1.15rem;margin-top:8px}.pre{white-space:pre-wrap}
+.tag{display:inline-block;background:#2f6bff33;color:var(--ac2);border-radius:99px;padding:2px 10px;font-size:.78rem}
+table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--bd);text-align:left;font-size:.9rem}
+</style></head><body><main id="app"></main>
+<nav id="nav"></nav>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const LS={get(k,d){try{const v=localStorage.getItem('nx_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('nx_'+k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=id=>parseFloat(String(document.getElementById(id).value).replace(',','.'));
+const eur=n=>isFinite(n)?n.toLocaleString('fr-FR',{style:'currency',currency:'EUR'}):'Valeurs invalides';
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const LOGO='<svg viewBox="0 0 40 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2f6bff"/><stop offset="1" stop-color="#5ec8ff"/></linearGradient></defs><path d="M20 3 36 12v16L20 37 4 28V12z" fill="none" stroke="url(#g)" stroke-width="3"/><path d="M13 27V13l14 14V13" fill="none" stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const TOOLS=[['outils','🧮','Calculatrices','Réductions, marges, budget'],['orga','✅','Organisateur','Tâches, objectifs, planning'],['textes','✍️','Créateur de textes','Posts, emails, descriptions'],['idees','💡','Idées','Business, cadeaux, vidéos'],['ia','🤖','Assistant IA','Discuter avec l’IA'],['plus','⭐','NEXORA PLUS','Comparer les formules']];
+const NAV=[['home','🏠','Accueil'],['outils','🧮','Calculs'],['orga','✅','Tâches'],['textes','✍️','Textes'],['plus','👤','Profil']];
+
+function layout(h){return `<div class="top"><div class="logo">${LOGO}NEXORA</div><a class="btn sm" href="#plus">PLUS</a></div>${h}`}
+const V={};
+V.home=()=>layout(`<h1>Que souhaites-tu faire ?</h1><p class="mu">Your everyday smart assistant</p>
+<input id="q" placeholder="🔍 Rechercher un outil…" oninput="srch()"><div class="grid" id="tl"></div>
+<div class="card"><h3>Découvre NEXORA PLUS</h3><p class="mu">Plus de générations, assistant avancé, historique.</p><a class="btn" href="#plus">Découvrir NEXORA PLUS</a></div>`);
+function srch(){const q=$('#q').value.toLowerCase();$('#tl').innerHTML=TOOLS.filter(t=>(t[2]+t[3]).toLowerCase().includes(q)).map(t=>`<a class="tool" href="#${t[0]}"><div class="ic">${t[1]}</div><b>${t[2]}</b><span class="mu">${t[3]}</span></a>`).join('')||'<p class="mu">Aucun outil trouvé.</p>'}
+
+// Calculators
+let ctab='classic',expr='';
+const CT={classic:'Classique',disc:'Réduction',prof:'Bénéfice',marg:'Marge',bud:'Budget'};
+V.outils=()=>layout(`<h2>Calculatrices</h2><div class="tabs">${Object.entries(CT).map(([k,v])=>`<button class="${k==ctab?'':'sec'}" onclick="ctab='${k}';render()">${v}</button>`).join('')}</div><div class="card" id="cb">${CB[ctab]()}</div>`);
+const keys=['7','8','9','÷','4','5','6','×','1','2','3','-','0',',','=','+'];
+const CB={
+classic:()=>`<div class="disp" id="dp">${esc(expr)||'0'}</div><div class="keys" style="margin-top:8px">${keys.map(k=>`<button onclick="key('${k}')">${k}</button>`).join('')}<button class="sec" style="grid-column:span 2" onclick="expr='';upd()">C</button><button class="sec" style="grid-column:span 2" onclick="expr=expr.slice(0,-1);upd()">⌫</button></div>`,
+disc:()=>`<label>Prix initial (€)<input id="a" inputmode="decimal"></label><label>Réduction (%)<input id="b" inputmode="decimal"></label><button onclick="r('disc')">Calculer</button><div class="res" id="r"></div>`,
+prof:()=>`<label>Chiffre d’affaires (€)<input id="a" inputmode="decimal"></label><label>Coûts totaux (€)<input id="b" inputmode="decimal"></label><button onclick="r('prof')">Calculer</button><div class="res" id="r"></div>`,
+marg:()=>`<label>Prix d’achat (€)<input id="a" inputmode="decimal"></label><label>Prix de vente (€)<input id="b" inputmode="decimal"></label><button onclick="r('marg')">Calculer</button><div class="res" id="r"></div>`,
+bud:()=>`<label>Revenus mensuels (€)<input id="a" inputmode="decimal"></label><label>Dépenses fixes (€)<input id="b" inputmode="decimal"></label><label>Autres dépenses (€)<input id="c" inputmode="decimal" value="0"></label><button onclick="r('bud')">Calculer</button><div class="res" id="r"></div>`};
+function key(k){if(k=='='){try{const e=expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'.');if(!/^[0-9+\-*/. ]+$/.test(e))throw 0;const v=Function('"use strict";return('+e+')')();expr=isFinite(v)?String(+v.toFixed(10)).replace('.',','):'Erreur'}catch(e){expr='Erreur'}}else{if(expr=='Erreur')expr='';expr+=k}upd()}
+function upd(){$('#dp').textContent=expr||'0'}
+function r(t){const a=num('a'),b=num('b');let o;
+if([a,b].some(isNaN))o='Remplis tous les champs avec des nombres.';
+else if(t=='disc')o=`Prix final : ${eur(a*(1-b/100))} — économie : ${eur(a*b/100)}`;
+else if(t=='prof'){const p=a-b;o=`Bénéfice : ${eur(p)}`+(a?` (${(p/a*100).toFixed(1)} % du CA)`:'')}
+else if(t=='marg'){o=b?`Marge : ${eur(b-a)} — taux de marge : ${a?((b-a)/a*100).toFixed(1):'—'} % — taux de marque : ${((b-a)/b*100).toFixed(1)} %`:'Le prix de vente doit être > 0.'}
+else{const c=num('c')||0,s=a-b-c;o=`Reste à vivre : ${eur(s)}`+(a?` (épargne : ${(s/a*100).toFixed(1)} %)`:'')+(s<0?' ⚠️ budget déficitaire':'')}
+$('#r').textContent=o}
+
+// Organizer (Supabase)
+let otab='t',DB={tasks:[],goals:[]},SUB=null;
+const KK=()=>otab=='t'?'tasks':'goals';
+async function loadDB(){if(!USER){DB={tasks:[],goals:[]};SUB=null;return}
+for(const k of ['tasks','goals']){const{data}=await sb.from(k).select('*').order('created_at');DB[k]=data||[]}
+const r=await sb.from('subscriptions').select('*').maybeSingle();SUB=r.data}
+V.orga=()=>{if(!USER)return needLogin();const L=DB[KK()].slice();if(otab=='t')L.sort((x,y)=>(x.task_time||'99').localeCompare(y.task_time||'99'));
+return layout(`<h2>Organisateur</h2><div class="tabs"><button class="${otab=='t'?'':'sec'}" onclick="otab='t';render()">Tâches & planning</button><button class="${otab=='g'?'':'sec'}" onclick="otab='g';render()">Objectifs</button></div>
+<div class="card"><input id="nt" placeholder="${otab=='t'?'Nouvelle tâche':'Nouvel objectif'}">${otab=='t'?'<input id="tm" type="time">':''}<button onclick="addI()">Ajouter</button></div>
+<div class="card">${L.length?L.map(i=>`<div class="row ${i.done?'done':''}"><input type="checkbox" ${i.done?'checked':''} onchange="tog('${i.id}')"><span>${i.task_time?`<b>${i.task_time}</b> `:''}${esc(i.title)}</span><button class="sec sm" onclick="edI('${i.id}')">✏️</button><button class="sec sm" onclick="delI('${i.id}')">🗑</button></div>`).join(''):'<p class="mu">Rien pour l’instant.</p>'}<p class="mu">${L.filter(i=>i.done).length}/${L.length} terminé(s) · sauvegardé sur ton compte</p></div>`)};
+async function addI(){const t=$('#nt').value.trim();if(!t)return;const row={title:t};if(otab=='t')row.task_time=$('#tm').value||null;const{error}=await sb.from(KK()).insert(row);if(error)alert(error.message);await loadDB();render()}
+async function tog(id){const i=DB[KK()].find(x=>x.id==id);await sb.from(KK()).update({done:!i.done}).eq('id',id);await loadDB();render()}
+async function delI(id){await sb.from(KK()).delete().eq('id',id);await loadDB();render()}
+async function edI(id){const i=DB[KK()].find(x=>x.id==id);const n=prompt('Modifier :',i.title);if(n&&n.trim()){await sb.from(KK()).update({title:n.trim()}).eq('id',id);await loadDB();render()}}
+
+// Auth
+const SB_URL='https://rhbjigpbgxotenlpwfgu.supabase.co',SB_KEY='sb_publishable_egP_2csQ--Xip49yzOwoKw_fSC1VQ80';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);let USER=null,amode='in';
+const needLogin=()=>layout(`<div class="card"><p>Connecte-toi pour utiliser cette fonction et sauvegarder tes données.</p><a class="btn" href="#auth">Se connecter</a></div>`);
+V.auth=()=>layout(`<h2>${{in:'Connexion',up:'Créer un compte',fg:'Mot de passe oublié'}[amode]}</h2><div class="card"><input id="em" type="email" placeholder="Email" autocomplete="email">${amode!='fg'?'<input id="pw" type="password" placeholder="Mot de passe (8 caractères min.)" autocomplete="'+(amode=='in'?'current':'new')+'-password">':''}<button onclick="doAuth()">Valider</button><p id="am" class="mu"></p><div class="tabs">${amode!='in'?'<button class="sec" onclick="amode=\'in\';render()">Connexion</button>':''}${amode!='up'?'<button class="sec" onclick="amode=\'up\';render()">Créer un compte</button>':''}${amode!='fg'?'<button class="sec" onclick="amode=\'fg\';render()">Mot de passe oublié</button>':''}</div></div>`);
+async function doAuth(){const em=$('#em').value.trim(),pw=$('#pw')?$('#pw').value:'';let r;
+if(amode=='in')r=await sb.auth.signInWithPassword({email:em,password:pw});
+else if(amode=='up')r=await sb.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin}});
+else r=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin});
+if(r.error){$('#am').textContent=r.error.message;return}
+if(amode=='in')location.hash='#plus';else $('#am').textContent=amode=='up'?'Compte créé. Vérifie ta boîte mail pour confirmer.':'Si ce compte existe, un email vient d’être envoyé.'}
+const acct=()=>USER?`<div class="card"><p>Connecté : <b>${esc(USER.email)}</b></p><p>Formule : <b>${SUB&&SUB.plan=='plus'&&SUB.status=='active'?'NEXORA PLUS':'NEXORA FREE'}</b></p><button disabled>Passer à PLUS (paiement bientôt)</button><p class="mu">Le paiement Stripe n’est pas encore branché. PLUS ne s’active qu’après confirmation du serveur.</p><button class="sec" onclick="sb.auth.signOut()">Se déconnecter</button></div>`:`<div class="card"><p>Tu utilises NEXORA sans compte.</p><a class="btn" href="#auth">Se connecter / Créer un compte</a></div>`;
+
+// Text generator
+const FREE=5;
+const day=()=>new Date().toISOString().slice(0,10);
+const used=()=>{const u=LS.get('use',{});return u.d==day()?u.n:0};
+const TT={desc:'Description produit',insta:'Post Instagram',tiktok:'Description TikTok',pro:'Message professionnel',mail:'Email',idee:'Idées de contenu'};
+V.textes=()=>layout(`<h2>Créateur de textes</h2><span class="tag">FREE : ${Math.max(0,FREE-used())}/${FREE} restantes aujourd’hui</span>
+<div class="card"><select id="ty">${Object.entries(TT).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><input id="su" placeholder="Sujet (ex : bougie parfumée artisanale)"><input id="de" placeholder="Détail ou avantage clé (facultatif)"><select id="to"><option>chaleureux</option><option>professionnel</option><option>dynamique</option></select><button onclick="gen()" ${used()>=FREE?'disabled':''}>Générer</button></div><div id="out"></div>
+<p class="mu">Génération par modèles, sans IA externe. L’IA avancée arrive avec la connexion serveur (voir Assistant IA).</p>`);
+function gen(){if(used()>=FREE)return;const ty=$('#ty').value,s=$('#su').value.trim(),d=$('#de').value.trim(),to=$('#to').value;if(!s){$('#out').innerHTML='<div class="card">Indique un sujet.</div>';return}
+const dd=d?` ${d}.`:'',op=to=='professionnel'?'Bonjour,':to=='dynamique'?'Hello !':'Coucou,';
+const G={
+desc:[`${s} : pensé pour simplifier votre quotidien.${dd} Qualité soignée, prise en main immédiate. Commandez le vôtre dès aujourd’hui.`,`Découvrez ${s}.${dd} Un choix malin pour allier style et efficacité. Stock limité.`],
+insta:[`✨ ${s} ✨\n${d||'Notre coup de cœur du moment.'}\nEnregistre ce post et dis-nous en commentaire ce que tu en penses 👇\n#${s.split(' ')[0].toLowerCase()} #inspiration #nouveaute`,`Nouveau : ${s} 🚀\n${d||'À découvrir maintenant.'}\nLien en bio !\n#${s.split(' ')[0].toLowerCase()} #tendance`],
+tiktok:[`POV : tu découvres ${s} 👀 ${d} #fyp #${s.split(' ')[0].toLowerCase()} #astuce`,`Tu ne vas plus pouvoir t’en passer : ${s} 🔥 ${d} #pourtoi #viral`],
+pro:[`${op}\n\nJe me permets de vous contacter au sujet de : ${s}.${dd}\nSeriez-vous disponible pour en échanger cette semaine ?\n\nCordialement,`,`${op}\n\nSuite à notre échange concernant ${s},${dd||' '}je reste à votre disposition pour toute précision.\n\nBien à vous,`],
+mail:[`Objet : ${s}\n\n${op}\n\nJe vous écris à propos de ${s}.${dd}\nN’hésitez pas à me répondre pour avancer ensemble.\n\nBien cordialement,`,`Objet : Suivi – ${s}\n\n${op}\n\nJe reviens vers vous concernant ${s}.${dd}\nQuand pouvons-nous en parler ?\n\nCordialement,`],
+idee:[`1. Coulisses autour de « ${s} »\n2. 3 erreurs courantes sur ${s}\n3. Avant / après ${s}\n4. Questions-réponses avec votre communauté sur ${s}\n5. Un mythe à démonter sur ${s}\n6. Tutoriel express : ${s} en 60 secondes`]};
+const t=pick(G[ty]);LS.set('use',{d:day(),n:used()+1});
+$('#out').innerHTML=`<div class="card"><div class="pre" id="gt">${esc(t)}</div><br><button onclick="cp()">📋 Copier</button> <button class="sec" onclick="render()">Fermer</button></div>`;document.querySelector('.tag').textContent=`FREE : ${Math.max(0,FREE-used())}/${FREE} restantes aujourd’hui`;if(used()>=FREE)document.querySelector('button[onclick="gen()"]').disabled=true}
+function cp(){const t=$('#gt').textContent;const ok=()=>alert('Texte copié');try{navigator.clipboard.writeText(t).then(ok,()=>fb(t))}catch(e){fb(t)}}
+function fb(t){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');alert('Texte copié')}catch(e){alert('Copie impossible : sélectionne le texte manuellement.')}a.remove()}
+
+// Ideas
+const ID={biz:['Service de courses pour seniors','Boutique de stickers personnalisés','Coaching organisation pour étudiants','Location de matériel de fête','Newsletter locale des bons plans','Création de CV et profils LinkedIn','Box de produits locaux','Atelier de réparation de téléphones'],gift:['Un carnet personnalisé','Une box de thés','Un cours de cuisine','Une enceinte portable','Un abonnement livre audio','Un cadre photo de souvenirs','Une plante facile d’entretien','Un puzzle sur mesure'],vid:['Une journée dans ma vie','Tuto en 60 secondes','Réagir à un commentaire','Top 3 de mes astuces','Les coulisses de mon projet','Avant / après','Erreurs de débutant','Challenge de 7 jours'],post:['Une citation avec ton avis','Le bilan de ta semaine','Sondage à ta communauté','Carrousel : 5 conseils','Témoignage client','Photo coulisses + anecdote','Mythe vs réalité'],proj:['Créer un site portfolio','Apprendre une langue en 30 jours','Lancer un petit blog','Construire une appli de suivi d’habitudes','Organiser un mini-événement de quartier','Monter une chaîne de tutoriels','Vendre ses objets inutilisés']};
+const IN={biz:'Business',gift:'Cadeaux',vid:'Vidéos',post:'Publications',proj:'Projets'};let itab='biz',ires=[];
+V.idees=()=>layout(`<h2>Générateur d’idées</h2><div class="tabs">${Object.entries(IN).map(([k,v])=>`<button class="${k==itab?'':'sec'}" onclick="itab='${k}';ires=[];render()">${v}</button>`).join('')}</div><button onclick="ires=ID[itab].slice().sort(()=>Math.random()-.5).slice(0,4);render()">🎲 Trouver des idées</button>${ires.map(i=>`<div class="card">${esc(i)}</div>`).join('')}`);
+
+// AI + plus
+V.ia=()=>layout(`<h2>Assistant IA</h2><div class="card"><span class="tag">Non connecté</span><p>L’assistant demande un serveur qui garde ta clé API secrète. Cette page publiée ne peut pas le faire en sécurité : aucune fausse réponse n’est affichée.</p><p class="mu">Étapes : 1) créer un projet Supabase gratuit, 2) y ajouter une Edge Function qui appelle l’API IA avec la clé stockée en secret, 3) limiter les requêtes par utilisateur (ex : 10/jour en FREE) pour rester dans ton budget de 20 €.</p></div>`);
+V.plus=()=>layout(`<h2>Formules</h2><div class="card"><table><tr><th></th><th>FREE</th><th>PLUS</th></tr><tr><td>Prix</td><td>0 €</td><td>3,99 €/mois</td></tr><tr><td>Textes / jour</td><td>5</td><td>Plus élevé</td></tr><tr><td>Calculatrices & organisateur</td><td>✔</td><td>✔</td></tr><tr><td>Assistant IA avancé</td><td>—</td><td>✔</td></tr><tr><td>Historique sauvegardé</td><td>—</td><td>✔</td></tr><tr><td>Modèles supplémentaires</td><td>—</td><td>✔</td></tr></table></div>
+${acct()}`);
+
+function render(){const h=(location.hash||'#home').slice(1);const v=V[h]?h:'home';$('#app').innerHTML=V[v]();if(v=='home')srch();
+$('#nav').innerHTML=NAV.map(n=>`<a href="#${n[0]}" class="${n[0]==v?'on':''}"><span>${n[1]}</span>${n[2]}</a>`).join('');window.scrollTo(0,0)}
+addEventListener('hashchange',render);render();
+sb.auth.onAuthStateChange(async(ev,ses)=>{USER=ses?ses.user:null;if(ev=='PASSWORD_RECOVERY'){const p=prompt('Nouveau mot de passe (8 caractères min.) :');if(p)await sb.auth.updateUser({password:p})}
+setTimeout(async()=>{await loadDB();render()},0)});
+</script></body></html>
